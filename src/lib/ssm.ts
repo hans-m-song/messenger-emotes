@@ -1,14 +1,15 @@
-import { GetParametersByPathCommand, SSMClient } from "@aws-sdk/client-ssm";
-import { config, Stage } from "../config";
-import { Logger } from "../lib/logger";
+import { GetParametersByPathCommand, SSMClient } from '@aws-sdk/client-ssm';
 
-const ssmLogger = new Logger({ namespace: "ssm" });
+import { config, Stage } from '../config';
+import { Logger } from '../lib/logger';
+
+const ssmLogger = new Logger({ namespace: 'ssm' });
 let localParameters: Record<string, string> = {};
 if (config.stage === Stage.Local) {
   try {
-    localParameters = JSON.parse(process.env.PARAMETER_STORE ?? "");
+    localParameters = JSON.parse(process.env.PARAMETER_STORE ?? '');
   } catch (error) {
-    ssmLogger.error(error, "failed to parse local parameters");
+    ssmLogger.error(error, 'failed to parse local parameters');
   }
 }
 
@@ -40,12 +41,12 @@ export const getParametersByPath = async (
   const response = await client(config.region)
     .send(command)
     .catch((error) => {
-      logger.add("path", path).error(error, "Failed to get parameters");
+      logger.add('path', path).error(error, 'Failed to get parameters');
       return null;
     });
 
   if (!response?.Parameters) {
-    logger.add("response", response).warn("No parameters were not returned");
+    logger.add('response', response).warn('No parameters were not returned');
   }
 
   return [];

@@ -1,0 +1,56 @@
+extends:
+  - eslint:recommended
+  - serverless-stack
+plugins:
+  - import
+parser: "@typescript-eslint/parser"
+rules:
+  # formatting
+  quotes:
+    - warn
+    - single
+  semi:
+    - warn
+    - always
+  comma-dangle:
+    - warn
+    - always-multiline
+  import/order:
+    - warn
+    - groups:
+        - - builtin
+          - external
+        - - parent
+          - sibling
+          - index
+      newlines-between: always
+      alphabetize:
+        order: asc
+        caseInsensitive: true
+  eol-last:
+    - warn
+    - always
+  padding-line-between-statements:
+    - warn
+    - blankLine: always
+      prev:
+        - block
+        - block-like
+      next: "*"
+
+  # types
+  "@typescript-eslint/no-explicit-any":
+    - off
+  "@typescript-eslint/ban-types":
+    - error
+    - types:
+        Function: false
+        extend-defaults: true
+  no-unused-vars:
+    - off
+  "@typescript-eslint/no-unused-vars":
+    - error
+    - vars: all
+      args: after-used
+      ignoreRestSiblings: false
+      argsIgnorePattern: ^_

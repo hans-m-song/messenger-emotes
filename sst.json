@@ -1,5 +1,5 @@
 {
-    "name": "messenger-emotes",
-    "region": "ap-southeast-2",
-    "main": "stacks/index.ts"
+  "name": "messenger-emotes",
+  "region": "ap-southeast-2",
+  "main": "stacks/index.ts"
 }

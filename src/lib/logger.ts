@@ -1,12 +1,14 @@
-import { match, __ } from "ts-pattern";
+import { match, when, __ } from 'ts-pattern';
+
+import { isFunction } from './guards';
 
 type LogMeta = Record<string, unknown>;
 
 enum Severity {
-  Debug = "DEBUG",
-  Info = "INFO",
-  Warn = "WARN",
-  Error = "ERROR",
+  Debug = 'DEBUG',
+  Info = 'INFO',
+  Warn = 'WARN',
+  Error = 'ERROR',
 }
 
 interface LoggerProps {
@@ -16,24 +18,24 @@ interface LoggerProps {
 
 const serialiseError = (error?: unknown) =>
   match(error)
-    .with(__.string, (message) => ({ name: "UnknownError", message }))
+    .with(__.string, (message) => ({ name: 'UnknownError', message }))
     .with(
       { name: __.string, message: __.string, stack: [__.string] },
       ({ name, message, stack }) => ({
         name,
         message,
         stack: stack.map(({ trim }) => trim()),
-      })
+      }),
     )
     .with(__.nullish, () => ({
-      name: "NullError",
-      message: "No error was provided",
+      name: 'NullError',
+      message: 'No error was provided',
     }))
     .otherwise((error) => {
       const obj = error as Record<string, unknown>;
       const result: Record<string, unknown> = {
-        name: obj.name ?? "UnknownError",
-        message: obj.message ?? "Unknown error occurred",
+        name: obj.name ?? 'UnknownError',
+        message: obj.message ?? 'Unknown error occurred',
         stack: obj.stack ?? [],
       };
 
@@ -51,27 +53,31 @@ export class Logger {
   namespace: string;
   meta: LogMeta;
 
-  constructor({ namespace, meta }: LoggerProps) {
-    this.namespace = namespace ?? "";
+  constructor({ namespace, meta }: LoggerProps = {}) {
+    this.namespace = namespace ?? '';
     this.meta = { ...meta };
   }
 
-  withContext(context: string | ((...args: any[]) => any), meta?: LogMeta) {
+  withContext(context: string | Function, meta?: LogMeta) {
     const name =
-      typeof context === "string"
+      typeof context === 'string'
         ? context
-        : typeof context === "function"
+        : typeof context === 'function'
         ? context.name
-        : "unknown";
+        : 'unknown';
 
     return new Logger({
-      namespace: [this.namespace, name].filter(Boolean).join("."),
+      namespace: [this.namespace, name].filter(Boolean).join('.'),
       meta: { ...this.meta, ...meta },
     });
   }
 
   add(key: string, value: unknown): Logger {
-    return this.withContext("", { ...this.meta, [key]: value });
+    const resolved = match(value)
+      .with({ toJSON: when(isFunction) }, ({ toJSON }) => toJSON())
+      .with({ toString: when(isFunction) }, ({ toString }) => toString())
+      .otherwise((value) => value);
+    return this.withContext('', { ...this.meta, [key]: resolved });
   }
 
   private emit(severity: Severity, message?: string) {
@@ -90,7 +96,8 @@ export class Logger {
     this.emit(Severity.Warn, message);
   }
 
-  error(error?: unknown, message?: string) {
-    this.add("error", serialiseError(error)).emit(Severity.Error, message);
+  error(message?: string, error?: unknown) {
+    const instance = error ? this.add('error', serialiseError(error)) : this;
+    instance.emit(Severity.Error, message);
   }
 }
